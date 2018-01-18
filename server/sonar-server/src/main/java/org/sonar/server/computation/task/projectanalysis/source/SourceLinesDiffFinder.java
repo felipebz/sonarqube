@@ -19,9 +19,13 @@
  */
 package org.sonar.server.computation.task.projectanalysis.source;
 
-import java.util.HashSet;
+import difflib.myers.MyersDiff;
+import difflib.myers.PathNode;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SourceLinesDiffFinder {
 
@@ -34,38 +38,25 @@ public class SourceLinesDiffFinder {
   }
 
   public Set<Integer> findNewOrChangedLines() {
-    return walk(0, 0, new HashSet<>());
-  }
+    Set<Integer> addedLines = new LinkedHashSet<>();
 
-  private Set<Integer> walk(int r, int db, HashSet<Integer> acc) {
+    try {
+      PathNode node = MyersDiff.buildPath(database.toArray(), report.toArray());
+      while (node != null) {
+        PathNode prevNode = node.prev;
+        if (prevNode != null && !node.isSnake()) {
+          int row1 = prevNode.j;
+          int row2 = node.j;
 
-    if (r >= report.size()) {
-      return acc;
-    }
-
-    if (db < database.size()) {
-
-      if (report.get(r).equals(database.get(db))) {
-        walk(stepIndex(r), stepIndex(db), acc);
-        return acc;
+          for (int i = row1 + 1; i <= row2; i++) {
+            addedLines.add(i);
+          }
+        }
+        node = prevNode;
       }
-
-      List<String> remainingDatabase = database.subList(db, database.size());
-      if (remainingDatabase.contains(report.get(r))) {
-        int nextDb = db + remainingDatabase.indexOf(report.get(r));
-        walk(r, nextDb, acc);
-        return acc;
-      }
-
+    } catch (Exception e) {
+      return IntStream.rangeClosed(1, report.size()).boxed().collect(Collectors.toSet());
     }
-
-    acc.add(r+1);
-    walk(stepIndex(r), db, acc);
-    return acc;
+    return addedLines;
   }
-
-  private static int stepIndex(int r) {
-    return ++r;
-  }
-
 }

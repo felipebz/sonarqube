@@ -80,7 +80,7 @@ public class SourceLinesDiffFinderTest {
 
     Set<Integer> diff = new SourceLinesDiffFinder(database, report).findNewOrChangedLines();
 
-    assertThat(diff).containsExactlyInAnyOrder(5, 6, 7, 8, 10, 11, 12);
+    assertThat(diff).containsExactlyInAnyOrder(5, 6, 7, 8, 9, 10);
 
   }
 
