@@ -21,11 +21,7 @@ package org.sonar.server.computation.task.projectanalysis.source;
 
 import difflib.myers.MyersDiff;
 import difflib.myers.PathNode;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class SourceLinesDiffFinder {
 
@@ -37,26 +33,36 @@ public class SourceLinesDiffFinder {
     this.report = report;
   }
 
-  public Set<Integer> findNewOrChangedLines() {
-    Set<Integer> addedLines = new LinkedHashSet<>();
+  public int[] findExistingLines() {
+    int[] index = new int[report.size()];
 
+    int dbLine = database.size();
+    int reportLine = report.size();
     try {
       PathNode node = MyersDiff.buildPath(database.toArray(), report.toArray());
-      while (node != null) {
-        PathNode prevNode = node.prev;
-        if (prevNode != null && !node.isSnake()) {
-          int row1 = prevNode.j;
-          int row2 = node.j;
 
-          for (int i = row1 + 1; i <= row2; i++) {
-            addedLines.add(i);
+      while (node.prev != null) {
+        PathNode prevNode = node.prev;
+
+        if (!node.isSnake()) {
+          // additions
+          reportLine -= (node.j - prevNode.j);
+          // removals
+          dbLine -= (node.i - prevNode.i);
+        } else {
+          // matches
+          for (int i = node.i; i > prevNode.i; i--) {
+            index[reportLine - 1] = dbLine;
+            reportLine--;
+            dbLine--;
           }
         }
         node = prevNode;
       }
     } catch (Exception e) {
-      return IntStream.rangeClosed(1, report.size()).boxed().collect(Collectors.toSet());
+      return index;
     }
-    return addedLines;
+    return index;
   }
+
 }

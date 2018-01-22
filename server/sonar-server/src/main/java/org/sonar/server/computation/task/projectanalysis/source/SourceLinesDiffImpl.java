@@ -21,7 +21,6 @@ package org.sonar.server.computation.task.projectanalysis.source;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import org.sonar.core.hash.SourceLinesHashesComputer;
 import org.sonar.core.util.CloseableIterator;
 import org.sonar.db.DbClient;
@@ -43,7 +42,7 @@ public class SourceLinesDiffImpl implements SourceLinesDiff {
   }
 
   @Override
-  public Set<Integer> getNewOrChangedLines(Component component) {
+  public int[] getMatchingLines(Component component) {
 
     List<String> database;
     try (DbSession dbSession = dbClient.openSession(false)) {
@@ -63,7 +62,7 @@ public class SourceLinesDiffImpl implements SourceLinesDiff {
     }
     report = linesHashesComputer.getLineHashes();
 
-    return new SourceLinesDiffFinder(database, report).findNewOrChangedLines();
+    return new SourceLinesDiffFinder(database, report).findExistingLines();
 
   }
 
