@@ -122,6 +122,12 @@ public class NoScmTest {
     assertThat(scmData.get(5).author).isEmpty();
     assertThat(scmData.get(5).date).isAfter(scmData.get(1).date);
 
+    tester.openBrowser()
+      .openCode("sample-without-scm", "sample-without-scm:src/main/xoo/sample/Sample.xoo")
+      .getSourceViewer()
+      .shouldHaveNewLines(5, 6, 7, 8, 9, 10)
+      .shouldNotHaveNewLines(1, 2, 3, 4, 11, 12, 13);
+
   }
 
   private File disposableWorkspaceFor(String project) throws IOException {
